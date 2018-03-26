@@ -1,0 +1,2 @@
+torch>=0.3
+treenet=0.0.1
