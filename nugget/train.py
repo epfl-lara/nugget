@@ -177,7 +177,7 @@ if __name__ == "__main__":
             sys.stdout.write("\033[F")
             sys.stdout.write("\033[F")
             sys.stdout.write("\033[K")
-            print("{0:{1}d} / {2}".format(n, len(str(total)), total))
+            print("{0:{1}d} / {2}".format(n, len(str(val_total)), val_total))
             sys.stdout.write("\033[K")
             print("MAE for distances: {}".format(absolute_error_distance / n))
             sys.stdout.write("\033[K")
