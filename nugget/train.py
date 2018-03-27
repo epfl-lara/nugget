@@ -1,3 +1,4 @@
+# Copyright 2018 EPFL.
 
 import argparse
 import os
