@@ -29,15 +29,25 @@ class Net(nn.Module):
 
     def forward(self, e1s, a1s, e2s, a2s):
 
-        emb_e1s = self.treelstm(e1s, a1s)
-        emb_e2s = self.treelstm(e2s, a2s)
+        first_embeddings = self.embeddings(e1s, a1s)
+        second_embeddings = self.embeddings(e2s, a2s)
 
-        hidden = torch.cat([emb_e1s, emb_e2s], dim=1)
+        return (self.distances(first_embeddings, second_embeddings),
+                self.classifications(first_embeddings, second_embeddings))
+
+    def embeddings(self, exprs, arities):
+        return self.treelstm(exprs, arities)
+
+    def distances(self, first_embeddings, second_embeddings):
+        return torch.sum(
+            torch.abs(second_embeddings - first_embeddings), dim=1)
+
+    def classifications(self, first_embeddings, second_embeddings):
+        hidden = torch.cat([first_embeddings, second_embeddings], dim=1)
         hidden = F.relu(self.fc1(hidden))
         hidden = F.relu(self.fc2(hidden))
         hidden = F.relu(self.fc3(hidden))
-
-        return (torch.sum(torch.abs(emb_e2s - emb_e1s), dim=1), self.classes(hidden))
+        return self.classes(hidden)
 
 
 class Discount(nn.Module):
