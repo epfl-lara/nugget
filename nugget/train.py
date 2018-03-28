@@ -96,12 +96,12 @@ if __name__ == "__main__":
             e1s = autograd.Variable(e1s)
             e2s = autograd.Variable(e2s)
             if cuda:
-                e1s.cuda()
-                a1s.cuda()
-                e2s.cuda()
-                a2s.cuda()
-                ds.cuda()
-                ts.cuda()
+                e1s = e1s.cuda()
+                a1s = a1s.cuda()
+                e2s = e2s.cuda()
+                a2s = a2s.cuda()
+                ds = ds.cuda()
+                ts = ts.cuda()
 
             (out_ds, out_css) = net.forward(e1s, a1s, e2s, a2s)
 
