@@ -26,6 +26,6 @@ setup(
     },
     install_requires=[
         "torch>=0.3",
-        "treenet=0.0.2",
+        "treenet>=0.0.2",
     ]
 )
