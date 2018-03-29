@@ -158,9 +158,27 @@ To train the neural network, issue the following command::
 
     python -m nugget.train
 
+By default, the trained model is saved at the end of every epoch to the directory ``models``.
+
 To see the available options for training::
 
     python -m nugget.train --help
+
+Test
+----
+
+To test the search algorithm using the trained neural network, issue the following command, with the appropriate path to the trained model::
+
+    python -m nugget.test models/trained.model
+
+The script will compare the performance of the breadth-first search and
+the neural-network guided search on various instances.
+By default, the search histories are outputted to the directory ``logs``.
+The summary is displayed on standard output as CSV.
+
+To see the available options::
+
+    python -m nugget.test --help
 
 FAQ
 ===
