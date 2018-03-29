@@ -9,7 +9,8 @@ class Heuristics(object):
 
     def __init__(self, atoms, model):
         self.model = Net(len(atoms))
-        self.model.load_state_dict(torch.load(model))
+        self.model.load_state_dict(torch.load(model,
+            map_location=lambda x, _: x.cpu()))
         self.encoder = ExpressionEncoder(atoms)
 
     def with_target(self, target):
