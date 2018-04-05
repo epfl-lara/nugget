@@ -9,6 +9,7 @@ DEFAULT_DATA = "data/testing.txt"
 DEFAULT_LOGS_DIR = "logs/"
 DEFAULT_ATOMS = list("abc")
 DEFAULT_PENALTY = 0.0
+DEFAULT_BATCH_SIZE = 64
 
 if __name__ == "__main__":
 
@@ -30,9 +31,17 @@ if __name__ == "__main__":
     parser.add_argument("-p", "--penalty", type=float,
         help="depth penalty",
         default=DEFAULT_PENALTY)
+    parser.add_argument("-b", "--batch", help="batch size", type=int,
+        default=DEFAULT_BATCH_SIZE)
+    parser.add_argument("--no-cuda", help="disable CUDA", action="store_true")
+    parser.add_argument("--device", type=int, help="GPU device")
     args = parser.parse_args()
 
     h = Heuristics(args.atoms, args.model)
+    cuda = not args.no_cuda and torch.cuda.is_available()
+    if cuda:
+        h.cuda(args.device)
+
     i = 0
 
     print(",".join([
@@ -42,7 +51,10 @@ if __name__ == "__main__":
         "bfs_time",
         "nngs_path_length",
         "nngs_visited_states",
-        "nngs_time"]))
+        "nngs_time",
+        "batched_nngs_path_length",
+        "batched_nngs_visited_states",
+        "batched_nngs_time"]))
 
     for line in open(args.data):
         [d, a, b, t] = line[:-1].split(" ; ")
@@ -76,6 +88,17 @@ if __name__ == "__main__":
             outputFile.write(history_to_csv(h1))
             outputFile.close()
 
+        start_time = time.clock()
+        (p2, a2, h2) = batch_best_first_search(a, b, h, args.penalty, args.batch)
+        end_time = time.clock()
+        d2 = end_time - start_time
+
+        if not args.no_logs:
+            outputFile = open(os.path.join(args.log_dir,
+                "{}-batch-nngs.csv".format(i)), 'w')
+            outputFile.write(history_to_csv(h2))
+            outputFile.close()
+
         print(','.join([str(x) for x in [
             i,
             len(a0),
@@ -83,6 +106,9 @@ if __name__ == "__main__":
             d0,
             len(a1),
             len(h1),
-            d1]]))
+            d1,
+            len(a2),
+            len(h2),
+            d2]]))
 
         i += 1
