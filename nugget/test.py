@@ -1,6 +1,6 @@
 import argparse
 import os
-import time
+from timeit import default_timer
 
 from nugget.heuristics import *
 from nugget.search import *
@@ -40,7 +40,11 @@ if __name__ == "__main__":
     h = Heuristics(args.atoms, args.model)
     cuda = not args.no_cuda and torch.cuda.is_available()
     if cuda:
-        h.cuda(args.device)
+        h_batch = Heuristics(args.atoms, args.model)
+        h_batch.cuda(args.device)
+        # We do not send h to CUDA, much slower on single queries.
+    else:
+        h_batch = h
 
     i = 0
 
@@ -66,9 +70,9 @@ if __name__ == "__main__":
         if d == 0:
             continue
 
-        start_time = time.clock()
+        start_time = default_timer()
         (p0, a0, h0) = breadth_first_search(a, b)
-        end_time = time.clock()
+        end_time = default_timer()
         d0 = end_time - start_time
 
         if not args.no_logs:
@@ -77,9 +81,9 @@ if __name__ == "__main__":
             outputFile.write(history_to_csv(h0))
             outputFile.close()
 
-        start_time = time.clock()
+        start_time = default_timer()
         (p1, a1, h1) = best_first_search(a, b, h, args.penalty)
-        end_time = time.clock()
+        end_time = default_timer()
         d1 = end_time - start_time
 
         if not args.no_logs:
@@ -88,9 +92,10 @@ if __name__ == "__main__":
             outputFile.write(history_to_csv(h1))
             outputFile.close()
 
-        start_time = time.clock()
-        (p2, a2, h2) = batch_best_first_search(a, b, h, args.penalty, args.batch)
-        end_time = time.clock()
+        start_time = default_timer()
+        (p2, a2, h2) = batch_best_first_search(a, b,
+            h_batch, args.penalty, args.batch)
+        end_time = default_timer()
         d2 = end_time - start_time
 
         if not args.no_logs:
