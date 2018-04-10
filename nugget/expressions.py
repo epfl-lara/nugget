@@ -123,6 +123,12 @@ class Expr(object):
     def get_children(self):
         return []
 
+    def height(self):
+        return None
+
+    def length(self):
+        return None
+
 
 class Binary(Expr):
     """Binary operation."""
@@ -274,6 +280,12 @@ class Binary(Expr):
     def get_children(self):
         return [self.lhs, self.rhs]
 
+    def height(self):
+        return 1 + max(self.lhs.height(), self.rhs.height())
+
+    def length(self):
+        return 1 + self.lhs.length() + self.rhs.length()
+
 
 class Atom(Expr):
     """Variable."""
@@ -303,6 +315,12 @@ class Atom(Expr):
 
     def is_atom(self):
         return True
+
+    def height(self):
+        return 0
+
+    def length(self):
+        return 1
 
 
 class Focus(Expr):
@@ -413,4 +431,10 @@ class Focus(Expr):
 
     def get_children(self):
         return [self.expr]
+
+    def height(self):
+        return 1 + self.expr.height()
+
+    def length(self):
+        return 1 + self.expr.length()
 
