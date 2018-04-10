@@ -195,3 +195,56 @@ def breadth_first_search(from_expr, to_expr):
 
                     return (path, actions, history)
 
+def iterative_depth_first_search(from_expr, to_expr, initial_max_depth=1):
+    solution = None
+    max_depth = initial_max_depth
+    while solution is None:
+        solution = depth_first_search(from_expr, to_expr, max_depth)
+        max_depth += 1
+    return solution
+
+def depth_first_search(from_expr, to_expr, max_depth=None):
+    if from_expr == to_expr:
+        return ([from_expr], [], [])
+
+    parents = { from_expr: (None, None) }
+    stack = [from_expr]
+
+    depths = { from_expr: 0 }
+
+    # For logging purposes.
+    ids = { from_expr: 0 }
+    history = [(0, from_expr, None, None, None)]
+    next_id = 1
+
+    while stack:
+        current_expr = stack.pop()
+        current_depth = depths[current_expr]
+
+        for transformation in transformations:
+            next_expr = transformations_functions[transformation](current_expr)
+            next_depth = current_depth + 1
+            if next_expr is not None and (next_expr not in parents or depths[next_expr] > next_expr):
+
+                parents[next_expr] = (current_expr, transformation)
+                depths[next_expr] = next_depth
+
+                ids[next_expr] = next_id
+                history.append((next_id, next_expr, None, transformation, ids[current_expr]))
+                next_id += 1
+
+                if max_depth is None or next_depth < max_depth:
+                    stack.append(next_expr)
+
+                if next_expr == to_expr:
+                    path = [to_expr]
+                    actions = []
+                    current_expr = to_expr
+                    while current_expr is not None:
+                        (current_expr, action) = parents[current_expr]
+                        if current_expr is not None:
+                            path.insert(0, current_expr)
+                            actions.insert(0, action)
+
+                    return (path, actions, history)
+
