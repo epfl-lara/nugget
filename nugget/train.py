@@ -39,6 +39,7 @@ if __name__ == "__main__":
         default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("-n", "--name", help="output model name", type=str)
     parser.add_argument("--no-cuda", help="disable CUDA", action="store_true")
+    parser.add_argument("--device", type=int, help="GPU device")
     args = parser.parse_args()
 
     net = Net(len(args.atoms))
@@ -55,7 +56,7 @@ if __name__ == "__main__":
     cuda = not args.no_cuda and torch.cuda.is_available()
     if cuda:
         print("CUDA enabled.")
-        net.cuda()
+        net.cuda(args.device)
 
     opt = optim.Adam(net.parameters())
     distLoss = Discount(nn.MSELoss())
@@ -96,12 +97,12 @@ if __name__ == "__main__":
             e1s = autograd.Variable(e1s)
             e2s = autograd.Variable(e2s)
             if cuda:
-                e1s = e1s.cuda()
-                a1s = a1s.cuda()
-                e2s = e2s.cuda()
-                a2s = a2s.cuda()
-                ds = ds.cuda()
-                ts = ts.cuda()
+                e1s = e1s.cuda(args.device)
+                a1s = a1s.cuda(args.device)
+                e2s = e2s.cuda(args.device)
+                a2s = a2s.cuda(args.device)
+                ds = ds.cuda(args.device)
+                ts = ts.cuda(args.device)
 
             (out_ds, out_css) = net.forward(e1s, a1s, e2s, a2s)
 
@@ -159,12 +160,12 @@ if __name__ == "__main__":
             e1s = autograd.Variable(e1s)
             e2s = autograd.Variable(e2s)
             if cuda:
-                e1s = e1s.cuda()
-                a1s = a1s.cuda()
-                e2s = e2s.cuda()
-                a2s = a2s.cuda()
-                ds = ds.cuda()
-                ts = ts.cuda()
+                e1s = e1s.cuda(args.device)
+                a1s = a1s.cuda(args.device)
+                e2s = e2s.cuda(args.device)
+                a2s = a2s.cuda(args.device)
+                ds = ds.cuda(args.device)
+                ts = ts.cuda(args.device)
 
             (out_ds, out_css) = net.forward(e1s, a1s, e2s, a2s)
 
