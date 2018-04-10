@@ -7,8 +7,11 @@ from nugget.network import Net
 
 class Heuristics(object):
 
-    def __init__(self, atoms, model):
-        self.model = Net(len(atoms))
+    def __init__(self, atoms, model, embedding_size=None):
+        if embedding_size is not None:
+            self.model = Net(len(atoms), embedding_size)
+        else:
+            self.model = Net(len(atoms))
         self.model.load_state_dict(torch.load(model,
             map_location=lambda x, _: x.cpu()))
         self.encoder = ExpressionEncoder(atoms)
