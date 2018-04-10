@@ -11,10 +11,10 @@ import nugget.expressions as expressions
 
 class Net(nn.Module):
 
-    def __init__(self, n_atoms):
+    def __init__(self, n_atoms, embedding_size=64):
         super(Net, self).__init__()
 
-        self.embedding_size = 64
+        self.embedding_size = embedding_size
         self.layer1_size = 128
         self.layer2_size = 64
         self.layer3_size = 32

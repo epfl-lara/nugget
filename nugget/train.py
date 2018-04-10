@@ -38,15 +38,19 @@ if __name__ == "__main__":
     parser.add_argument("-o", "--out", help="output directory", type=str,
         default=DEFAULT_OUTPUT_DIR)
     parser.add_argument("-n", "--name", help="output model name", type=str)
+    parser.add_argument("-s", "--size", help="embedding size", type=int)
     parser.add_argument("--no-cuda", help="disable CUDA", action="store_true")
     parser.add_argument("--device", type=int, help="GPU device")
     args = parser.parse_args()
 
-    net = Net(len(args.atoms))
+    if args.size is not None:
+        net = Net(len(args.atoms), args.size)
+    else:
+        net = Net(len(args.atoms))
+
     if args.model:
         print("Loading weights from model: {}".format(args.model))
         net.load_state_dict(torch.load(args.model))
-
 
     name = args.name if args.name is not None else str(uuid.uuid4())
     if not args.name:

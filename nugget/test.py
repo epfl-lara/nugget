@@ -34,10 +34,11 @@ if __name__ == "__main__":
     parser.add_argument("-b", "--batch", help="batch size", type=int,
         default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--no-cuda", help="disable CUDA", action="store_true")
+    parser.add_argument("-s", "--size", help="embedding size", type=int)
     parser.add_argument("--device", type=int, help="GPU device")
     args = parser.parse_args()
 
-    h = Heuristics(args.atoms, args.model)
+    h = Heuristics(args.atoms, args.model, args.size)
     cuda = not args.no_cuda and torch.cuda.is_available()
     if cuda:
         h_batch = Heuristics(args.atoms, args.model)
