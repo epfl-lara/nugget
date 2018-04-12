@@ -14,6 +14,7 @@ from nugget.reader import Reader
 DEFAULT_MODELS_DIR = "models/"
 DEFAULT_ATOMS = list("abc")
 DEFAULT_BATCH_SIZE = 32
+DEFAULT_START = 0
 DEFAULT_EPOCHS = 10
 
 if __name__ == "__main__":
@@ -22,6 +23,9 @@ if __name__ == "__main__":
         description="Measure the MAE and accuracy of the models.")
     parser.add_argument("name", help="model name", type=str)
     parser.add_argument("data", help="data file", type=str)
+    parser.add_argument("-s", "--start", help="epoch at which to start",
+        type=int,
+        default=DEFAULT_START)
     parser.add_argument("-e", "--epochs", help="number of epochs", type=int,
         default=DEFAULT_EPOCHS)
     parser.add_argument("-b", "--batch", help="batch size", type=int,
@@ -32,9 +36,13 @@ if __name__ == "__main__":
         default=DEFAULT_MODELS_DIR)
     parser.add_argument("--no-cuda", help="disable CUDA", action="store_true")
     parser.add_argument("--device", type=int, help="GPU device")
+    parser.add_argument("--size", help="embedding size", type=int)
     args = parser.parse_args()
 
-    net = Net(len(args.atoms))
+    if args.size is not None:
+        net = Net(len(args.atoms), args.size)
+    else:
+        net = Net(len(args.atoms))
 
     cuda = not args.no_cuda and torch.cuda.is_available()
     if cuda:
@@ -46,13 +54,18 @@ if __name__ == "__main__":
     distLoss = Discount(nn.MSELoss())
     classLoss = Discount(nn.CrossEntropyLoss())
 
-    print(",".join(["epoch", "mae", "accuracy", "dmse", "dce"]))
+    print(",".join(["epoch", "mae", "accuracy", "dmse", "dce"] + ["mae_distance_" + str(d) for d in range(1, 11)]))
 
-    for i in range(args.epochs):
+    for i in range(args.start, args.start + args.epochs):
         model_file = os.path.join(args.models_dir, "{}-{}.model".format(args.name, i))
-        net.load_state_dict(torch.load(model_file))
+        net.load_state_dict(torch.load(model_file, map_location=lambda x, _: x.cpu()))
 
         n = 0
+        distances_count = {}
+        error_per_distances = {}
+        for d in range(1, 11):
+            distances_count[d] = 0
+            error_per_distances[d] = 0.0
         error_distance = 0.0
         absolute_error_distance = 0.0
         error_classes = 0.0
@@ -83,9 +96,15 @@ if __name__ == "__main__":
             error_distance += dl.data[0]
             error_classes += cl.data[0]
 
-            absolute_error_distance += torch.sum(torch.abs(out_ds - ds)).data[0]
+            abs_distance_diffs = torch.abs(out_ds - ds)
+            absolute_error_distance += torch.sum(abs_distance_diffs).data[0]
             classification_accuracy_classes += torch.sum(
                 (torch.max(out_css, 1)[1] == ts).float()).data[0]
+
+            for d in range(1, 11):
+                at_distance = (ds == d).float()
+                distances_count[d] += torch.sum(at_distance).data[0]
+                error_per_distances[d] += torch.sum(at_distance * abs_distance_diffs).data[0]
 
             n += step_size
 
@@ -95,6 +114,7 @@ if __name__ == "__main__":
             classification_accuracy_classes / n,
             error_distance / n,
             error_classes / n,
-        ]]))
+        ] + [error_per_distances[d] / distances_count[d]\
+                    for d in range(1, 11)]]))
 
 
