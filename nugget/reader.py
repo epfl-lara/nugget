@@ -20,8 +20,13 @@ class Reader(object):
         for line in open(self.file_name):
             [d, a, b, ms] = line[:-1].split(" ; ")
             ts = ms.split(" , ")
-            t = transformations.index(ts[0])
+            try:
+                t = transformations.index(ts[0])
+            except:
+                t = None
             d = int(d)
+            if d < 0:
+                d = None
             a = from_prefix_notation(a)
             b = from_prefix_notation(b)
             yield (a, b, d, t)
