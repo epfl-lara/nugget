@@ -54,7 +54,9 @@ if __name__ == "__main__":
     distLoss = Discount(nn.MSELoss())
     classLoss = Discount(nn.CrossEntropyLoss())
 
-    print(",".join(["epoch", "mae", "accuracy", "dmse", "dce"] + ["mae_distance_" + str(d) for d in range(1, 11)]))
+    print(",".join(["epoch", "mae", "accuracy", "dmse", "dce"] +
+        ["mae_distance_" + str(d) for d in range(1, 11)] +
+        ["accuracy_distance_" + str(d) for d in range(1, 11)]))
 
     for i in range(args.start, args.start + args.epochs):
         model_file = os.path.join(args.models_dir, "{}-{}.model".format(args.name, i))
@@ -63,8 +65,10 @@ if __name__ == "__main__":
         n = 0
         distances_count = {}
         error_per_distances = {}
+        correct_per_distances = {}
         for d in range(1, 11):
             distances_count[d] = 0
+            correct_per_distances[d] = 0
             error_per_distances[d] = 0.0
         error_distance = 0.0
         absolute_error_distance = 0.0
@@ -97,14 +101,15 @@ if __name__ == "__main__":
             error_classes += cl.data[0]
 
             abs_distance_diffs = torch.abs(out_ds - ds)
+            correct_predictions = (torch.max(out_css, 1)[1] == ts).float()
             absolute_error_distance += torch.sum(abs_distance_diffs).data[0]
-            classification_accuracy_classes += torch.sum(
-                (torch.max(out_css, 1)[1] == ts).float()).data[0]
+            classification_accuracy_classes += torch.sum(correct_predictions).data[0]
 
             for d in range(1, 11):
                 at_distance = (ds == d).float()
                 distances_count[d] += torch.sum(at_distance).data[0]
                 error_per_distances[d] += torch.sum(at_distance * abs_distance_diffs).data[0]
+                correct_per_distances[d] += torch.sum(at_distance * correct_predictions).data[0]
 
             n += step_size
 
@@ -114,7 +119,10 @@ if __name__ == "__main__":
             classification_accuracy_classes / n,
             error_distance / n,
             error_classes / n,
-        ] + [error_per_distances[d] / distances_count[d]\
-                    for d in range(1, 11)]]))
+        ] +
+        [error_per_distances[d] / distances_count[d]\
+            for d in range(1, 11)] +
+        [correct_per_distances[d] / distances_count[d]\
+            for d in range(1, 11)]]))
 
 
