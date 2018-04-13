@@ -6,6 +6,7 @@ from timeit import default_timer
 from nugget.generate import random_pair
 from nugget.heuristics import *
 from nugget.search import *
+from nugget.utils import timeout
 
 DEFAULT_LOGS_DIR = "logs/"
 DEFAULT_ATOMS = list("abc")
@@ -15,32 +16,6 @@ DEFAULT_APPROX_DISTANCE = 60
 DEFAULT_MIN_DEPTH = 2
 DEFAULT_MAX_DEPTH = 4
 DEFAULT_TIMEOUT = 5 * 60
-
-def timeout(func, duration):
-    """Timeout.
-
-    Adapted from StackOverflow:
-    https://stackoverflow.com/questions/492519/timeout-on-a-function-call
-    """
-
-    import signal
-
-    class TimeoutError(Exception):
-        pass
-
-    def handler(signum, frame):
-        raise TimeoutError()
-
-    signal.signal(signal.SIGALRM, handler)
-    signal.alarm(duration)
-    try:
-        result = func()
-    except TimeoutError as exc:
-        result = None
-    finally:
-        signal.alarm(0)
-
-    return result
 
 
 if __name__ == "__main__":
