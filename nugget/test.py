@@ -1,4 +1,5 @@
 import argparse
+import gc
 import os
 from timeit import default_timer
 
@@ -37,6 +38,8 @@ if __name__ == "__main__":
         default=DEFAULT_BATCH_SIZE)
     parser.add_argument("--no-cuda", help="disable CUDA", action="store_true")
     parser.add_argument("--skip-bfs", help="disable BFS", action="store_true")
+    parser.add_argument("--skip-nngs", help="disable NNGS", action="store_true")
+    parser.add_argument("--skip-batch-nngs", help="disable Batch-NNGS", action="store_true")
     parser.add_argument("-s", "--size", help="embedding size", type=int)
     parser.add_argument("--device", type=int, help="GPU device")
     parser.add_argument("--timeout", type=int, help="Timeout")
@@ -45,7 +48,7 @@ if __name__ == "__main__":
     h = Heuristics(args.atoms, args.model, args.size)
     cuda = not args.no_cuda and torch.cuda.is_available()
     if cuda:
-        h_batch = Heuristics(args.atoms, args.model)
+        h_batch = Heuristics(args.atoms, args.model, args.size)
         h_batch.cuda(args.device)
         # We do not send h to CUDA, much slower on single queries.
     else:
@@ -72,6 +75,8 @@ if __name__ == "__main__":
         # BFS
 
         if not args.skip_bfs:
+            gc.collect()
+
             def exp0():
                 start_time = default_timer()
                 (p0, a0, h0) = breadth_first_search(a, b)
@@ -98,52 +103,62 @@ if __name__ == "__main__":
 
         # NNGS
 
-        def exp1():
-            start_time = default_timer()
-            (p1, a1, h1) = best_first_search(a, b, h, args.penalty)
-            end_time = default_timer()
-            d1 = end_time - start_time
-            return (p1, a1, h1, d1)
+        if not args.skip_nngs:
+            gc.collect()
 
-        if args.timeout is None:
-            (p1, a1, h1, d1) = exp1()
-            valid1 = True
+            def exp1():
+                start_time = default_timer()
+                (p1, a1, h1) = best_first_search(a, b, h, args.penalty)
+                end_time = default_timer()
+                d1 = end_time - start_time
+                return (p1, a1, h1, d1)
+
+            if args.timeout is None:
+                (p1, a1, h1, d1) = exp1()
+                valid1 = True
+            else:
+                res1 = timeout(exp1, args.timeout)
+                valid1 = res1 is not None
+                if valid1:
+                    (p1, a1, h1, d1) = res1
+
+            if not args.no_logs and valid1:
+                outputFile = open(os.path.join(args.log_dir,
+                    "{}-nngs.csv".format(i)), 'w')
+                outputFile.write(history_to_csv(h1))
+                outputFile.close()
         else:
-            res1 = timeout(exp1, args.timeout)
-            valid1 = res1 is not None
-            if valid1:
-                (p1, a1, h1, d1) = res1
-
-        if not args.no_logs and valid1:
-            outputFile = open(os.path.join(args.log_dir,
-                "{}-nngs.csv".format(i)), 'w')
-            outputFile.write(history_to_csv(h1))
-            outputFile.close()
+            valid1 = False
 
         # Batch-NNGS
 
-        def exp2():
-            start_time = default_timer()
-            (p2, a2, h2) = batch_best_first_search(a, b,
-                h_batch, args.penalty, args.batch)
-            end_time = default_timer()
-            d2 = end_time - start_time
-            return (p2, a2, h2, d2)
+        if not args.skip_batch_nngs:
+            gc.collect()
 
-        if args.timeout is None:
-            (p2, a2, h2, d2) = exp2()
-            valid2 = True
+            def exp2():
+                start_time = default_timer()
+                (p2, a2, h2) = batch_best_first_search(a, b,
+                    h_batch, args.penalty, args.batch)
+                end_time = default_timer()
+                d2 = end_time - start_time
+                return (p2, a2, h2, d2)
+
+            if args.timeout is None:
+                (p2, a2, h2, d2) = exp2()
+                valid2 = True
+            else:
+                res2 = timeout(exp2, args.timeout)
+                valid2 = res2 is not None
+                if valid2:
+                    (p2, a2, h2, d2) = res2
+
+            if not args.no_logs and valid2:
+                outputFile = open(os.path.join(args.log_dir,
+                    "{}-batch-nngs.csv".format(i)), 'w')
+                outputFile.write(history_to_csv(h2))
+                outputFile.close()
         else:
-            res2 = timeout(exp2, args.timeout)
-            valid2 = res2 is not None
-            if valid2:
-                (p2, a2, h2, d2) = res2
-
-        if not args.no_logs and valid2:
-            outputFile = open(os.path.join(args.log_dir,
-                "{}-batch-nngs.csv".format(i)), 'w')
-            outputFile.write(history_to_csv(h2))
-            outputFile.close()
+            valid2 = False
 
         # Print results
 
